@@ -23,8 +23,17 @@ class AuthDatasourceImpl extends AuthDatasource {
       });
 
       return UserMapper.userJsonToEntity(response.data);
-    } catch (e) {
-      throw WrongCredentials();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw WrongCredentials();
+      }
+      if (e.type == DioExceptionType.connectionTimeout) {
+        throw ConnectionTimeout();
+      }
+
+      throw Exception();
+    } catch (_) {
+      throw Exception();
     }
   }
 
