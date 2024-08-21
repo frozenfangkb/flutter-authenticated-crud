@@ -55,6 +55,7 @@ final goRouterProvider = Provider(
           switch (isGoingTo) {
             case '/login':
             case '/register':
+            case '/splash':
               return '/';
           }
         }
