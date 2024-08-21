@@ -1,4 +1,8 @@
+
+
+
 class User {
+
   final String id;
   final String email;
   final String fullName;
@@ -10,10 +14,11 @@ class User {
     required this.email,
     required this.fullName,
     required this.roles,
-    required this.token,
+    required this.token
   });
 
   bool get isAdmin {
-    return roles.contains("admin");
+    return roles.contains('admin');
   }
+
 }

@@ -1,2 +1,4 @@
+
+
+export 'infrastructure/inputs/inputs.dart';
 export 'widgets/widgets.dart';
-export 'infrastucture/inputs/inputs.dart';
