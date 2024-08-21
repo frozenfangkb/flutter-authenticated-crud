@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teslo_shop/features/auth/domain/domain.dart';
 import 'package:teslo_shop/features/auth/infrastucture/infrastucture.dart';
+import 'package:teslo_shop/features/shared/infrastucture/services/key_value_storage_service.dart';
+import 'package:teslo_shop/features/shared/infrastucture/services/key_value_storage_service_impl.dart';
 
 enum AuthStatus {
   checking,
@@ -10,14 +12,24 @@ enum AuthStatus {
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final authRepository = AuthRepositoryImpl();
+  final keyValueStorageService = KeyValueStorageServiceImpl();
 
-  return AuthNotifier(authRepository: authRepository);
+  return AuthNotifier(
+    authRepository: authRepository,
+    keyValueStorageService: keyValueStorageService,
+  );
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository authRepository;
+  final KeyValueStorageService keyValueStorageService;
 
-  AuthNotifier({required this.authRepository}) : super(AuthState());
+  AuthNotifier({
+    required this.keyValueStorageService,
+    required this.authRepository,
+  }) : super(AuthState()) {
+    checkAuthStatus();
+  }
 
   Future<void> loginUser(String email, String password) async {
     await Future.delayed(const Duration(milliseconds: 500));
@@ -38,10 +50,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   void registerUser(String email, String password) async {}
 
-  void checkAuthStatus() async {}
+  void checkAuthStatus() async {
+    final token = await keyValueStorageService.getValue<String>('token');
 
-  void _setLoggedUser(User user) {
-    //TODO: Guardar el token físicamente
+    if (token == null) {
+      return logout();
+    }
+
+    try {
+      final user = await authRepository.checkAuthStatus(token);
+      _setLoggedUser(user);
+    } catch (_) {
+      logout();
+    }
+  }
+
+  void _setLoggedUser(User user) async {
+    await keyValueStorageService.setKeyValue('token', user.token);
     state = state.copyWith(
       user: user,
       errorMessage: '',
@@ -50,7 +75,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout([String? errorMessage]) async {
-    //TODO: limpiar token
+    keyValueStorageService.removeKey('token');
 
     state = state.copyWith(
       authStatus: AuthStatus.notAuthenticated,
